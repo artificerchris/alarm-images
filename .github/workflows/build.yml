@@ -2,9 +2,7 @@ name: Build images
 
 on:
   push:
-    # If you still want to build on any push, keep the below line
     branches: [ main ]
-    # Also trigger on tags that start with 'v'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -14,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
@@ -23,18 +21,15 @@ jobs:
           sudo apt install -y parted wget dosfstools zip
 
       # Build Images
-      # Note: Uploading zip file artifact will be double zipped if you also do an artifact upload.
-      #       If you only need release assets, you can skip "actions/upload-artifact" step below.
-
       - name: Build Raspberry Pi 5 AArch64 Image
         run: |
           sudo bash create-image aarch64 8G
           sudo cp rpi-aarch64-archlinux.img rpi-5-aarch64-archlinux.img
           zip -v rpi-5-aarch64-archlinux.img.zip rpi-5-aarch64-archlinux.img
 
-      # (Optional) Upload as workflow artifact, if you still want it available in Actions logs
+      # (Optional) Upload as workflow artifact
       - name: Upload Raspberry Pi 5 AArch64 Image artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: rpi-5-aarch64-archlinux.img.zip
           path: rpi-5-aarch64-archlinux.img.zip
