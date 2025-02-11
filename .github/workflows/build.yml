@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      # Check out your repository using v4 (if/when available)
+      - uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
@@ -27,14 +28,14 @@ jobs:
           sudo cp rpi-aarch64-archlinux.img rpi-5-aarch64-archlinux.img
           zip -v rpi-5-aarch64-archlinux.img.zip rpi-5-aarch64-archlinux.img
 
-      # (Optional) Upload as workflow artifact
+      # (Optional) Upload as workflow artifact using v4 (if/when available)
       - name: Upload Raspberry Pi 5 AArch64 Image artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rpi-5-aarch64-archlinux.img.zip
           path: rpi-5-aarch64-archlinux.img.zip
 
-      # Create a GitHub Release (only runs on tag push)
+      # Create a GitHub Release (runs on tag push)
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         id: create_release
