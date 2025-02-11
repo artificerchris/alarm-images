@@ -2,6 +2,11 @@ name: Build images
 
 on:
   push:
+    # If you still want to build on any push, keep the below line
+    branches: [ main ]
+    # Also trigger on tags that start with 'v'
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -10,27 +15,52 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt upgrade
-          sudo apt install parted wget dosfstools zip
+          sudo apt upgrade -y
+          sudo apt install -y parted wget dosfstools zip
 
       # Build Images
-      # Note: Uploading zip file artifact will be double zip. Do not delete .img file
-      # See https://github.com/actions/upload-artifact#zipped-artifact-downloads
+      # Note: Uploading zip file artifact will be double zipped if you also do an artifact upload.
+      #       If you only need release assets, you can skip "actions/upload-artifact" step below.
 
-      - name: Build Raspberry Pi 4 AArch64 Image
+      - name: Build Raspberry Pi 5 AArch64 Image
         run: |
           sudo bash create-image aarch64 8G
-          sudo cp rpi-aarch64-archlinux.img rpi-4-aarch64-archlinux.img
-          zip -v rpi-4-aarch64-archlinux.img.zip rpi-4-aarch64-archlinux.img
+          sudo cp rpi-aarch64-archlinux.img rpi-5-aarch64-archlinux.img
+          zip -v rpi-5-aarch64-archlinux.img.zip rpi-5-aarch64-archlinux.img
 
-
-      # Upload artifacts
-
-      - name: Upload Raspberry Pi 4 AArch64 Image artifact
+      # (Optional) Upload as workflow artifact, if you still want it available in Actions logs
+      - name: Upload Raspberry Pi 5 AArch64 Image artifact
         uses: actions/upload-artifact@v2
         with:
-          name: rpi-4-aarch64-archlinux.img.zip
-          path: rpi-4-aarch64-archlinux.img.zip
+          name: rpi-5-aarch64-archlinux.img.zip
+          path: rpi-5-aarch64-archlinux.img.zip
+
+      # Create a GitHub Release (only runs on tag push)
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: "Release ${{ github.ref_name }}"
+          body: "Automated release for ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+
+      # Upload the .zip file to the GitHub Release
+      - name: Upload Release Asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: rpi-5-aarch64-archlinux.img.zip
+          asset_name: rpi-5-aarch64-archlinux.img.zip
+          asset_content_type: application/zip
